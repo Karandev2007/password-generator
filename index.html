@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Generator</title>
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/10473/10473528.png" type="image/png">
+  <script src="https://cdn.jsdelivr.net/npm/zxcvbn@4.4.2/dist/zxcvbn.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-black text-white font-sans min-h-screen flex items-center justify-center p-6">
+
+  <!-- Main Container -->
+  <div class="w-full max-w-md p-6 bg-zinc-800 border border-zinc-700 rounded-lg shadow-md space-y-6">
+    <h1 class="text-center text-2xl font-semibold">Password Generator</h1>
+
+    <!-- Password Length -->
+    <div>
+      <label for="length" class="block mb-2 text-sm font-medium">Password Length</label>
+      <input type="number" id="length" min="8" max="128" value="12" class="block w-full px-4 py-2 bg-zinc-700 text-white rounded-lg border border-zinc-600 placeholder:text-gray-400 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+    </div>
+
+    <!-- Character Types -->
+    <div>
+      <p class="mb-3 text-sm font-medium">Character Types:</p>
+      <div class="space-y-2">
+        <label class="flex items-center gap-2">
+          <input type="checkbox" id="uppercase" checked class="h-5 w-5 text-yellow-500 rounded border-zinc-600 focus:ring-2 focus:ring-yellow-500">
+          <span class="text-sm">Uppercase</span>
+        </label>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" id="lowercase" checked class="h-5 w-5 text-yellow-500 rounded border-zinc-600 focus:ring-2 focus:ring-yellow-500">
+          <span class="text-sm">Lowercase</span>
+        </label>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" id="numbers" checked class="h-5 w-5 text-yellow-500 rounded border-zinc-600 focus:ring-2 focus:ring-yellow-500">
+          <span class="text-sm">Numbers</span>
+        </label>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" id="special" checked class="h-5 w-5 text-yellow-500 rounded border-zinc-600 focus:ring-2 focus:ring-yellow-500">
+          <span class="text-sm">Special Characters</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Password Strength -->
+    <div>
+      <label class="block mb-2 text-sm font-medium">Password Strength</label>
+      <div id="strength" class="h-3 w-full bg-zinc-700 rounded"></div>
+    </div>
+
+    <!-- Emoji Feedback -->
+    <div id="emojiFeedback" class="text-center text-3xl mt-4">
+      😐
+    </div>
+
+    <!-- Generated Password -->
+    <div class="flex items-center gap-2 mt-4">
+      <input type="text" id="password" readonly placeholder="Generated password will appear here" class="block w-full px-4 py-2 bg-zinc-700 text-white rounded-lg border border-zinc-600 placeholder:text-gray-400 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+      <button id="copyBtn" class="px-4 py-2 bg-blue-500 text-sm text-white rounded-md hover:bg-blue-600">
+        Copy
+      </button>
+      <button id="visibilityBtn" class="text-2xl text-gray-400 hover:text-blue-500">
+        👁️
+      </button>
+    </div>
+
+    <!-- Generate Button -->
+    <button id="generate" class="block w-full py-3 mt-4 text-white bg-blue-500 rounded-lg font-semibold hover:bg-blue-600">
+      Generate Password
+    </button>
+
+    <!-- Crack Time -->
+    <p id="crackTime" class="text-sm text-gray-400 mt-4 text-center">
+      Crack time will be displayed here.
+    </p>
+
+    <!-- Password History -->
+    <div>
+      <h3 class="text-lg font-medium mt-4">Password History:</h3>
+      <ul id="passwordHistory" class="mt-2 text-sm text-gray-400 space-y-1"></ul>
+    </div>
+  </div>
+
+  <!-- Alert Notification -->
+  <div id="alertMessage" class="fixed bottom-4 right-4 hidden bg-blue-500 text-white px-6 py-3 rounded shadow-md">
+    <p id="alertText">Alert Message</p>
+  </div>
+
+  <script>
+    let passwordHistory = [];
+
+    // Generate Password
+    function generatePassword() {
+      const length = document.getElementById("length").value;
+      const useUppercase = document.getElementById("uppercase").checked;
+      const useLowercase = document.getElementById("lowercase").checked;
+      const useNumbers = document.getElementById("numbers").checked;
+      const useSpecial = document.getElementById("special").checked;
+
+      const upperChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const lowerChars = "abcdefghijklmnopqrstuvwxyz";
+      const numberChars = "0123456789";
+      const specialChars = "!@#$%^&*()_+[]{}|;:,.<>?";
+
+      let charset = "";
+      if (useUppercase) charset += upperChars;
+      if (useLowercase) charset += lowerChars;
+      if (useNumbers) charset += numberChars;
+      if (useSpecial) charset += specialChars;
+
+      let password = "";
+      for (let i = 0; i < length; i++) {
+        password += charset.charAt(Math.floor(Math.random() * charset.length));
+      }
+
+      document.getElementById("password").value = password;
+      updatePasswordStrength(password);
+      updateEmojiFeedback(password);
+      updateCrackTime(password);
+      updatePasswordHistory(password);
+      showAlert("🛎️ Password generated successfully!");
+    }
+
+    // Password Strength Meter
+    function updatePasswordStrength(password) {
+      const strengthMeter = document.getElementById("strength");
+      const strength = zxcvbn(password).score;
+      const classes = ["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-green-400", "bg-green-500"];
+      strengthMeter.className = `h-3 w-full rounded ${classes[strength]}`;
+    }
+
+    // Emoji Feedback
+    function updateEmojiFeedback(password) {
+      const emojiFeedback = document.getElementById("emojiFeedback");
+      const strength = zxcvbn(password).score;
+      const emojis = ["💔", "😟", "😐", "🙂", "💪😎🔒"];
+      emojiFeedback.textContent = emojis[strength];
+    }
+
+    // Crack Time Calculation
+    function updateCrackTime(password) {
+      const crackTime = zxcvbn(password).crack_times_display.offline_slow_hashing_1e4_per_second;
+      document.getElementById("crackTime").textContent = `It would take approximately ${crackTime} to crack this password.`;
+    }
+
+    // Password History
+    function updatePasswordHistory(password) {
+      if (passwordHistory.length >= 5) passwordHistory.pop();
+      passwordHistory.unshift(password);
+      document.getElementById("passwordHistory").innerHTML = passwordHistory.map((pwd) => `<li>${pwd}</li>`).join("");
+    }
+
+    // Copy Password
+    document.getElementById("copyBtn").addEventListener("click", () => {
+      const password = document.getElementById("password").value;
+      navigator.clipboard.writeText(password);
+      showAlert("📜 Password copied to clipboard!");
+    });
+
+    // Password Visibility Toggle
+    document.getElementById("visibilityBtn").addEventListener("click", () => {
+      const passwordField = document.getElementById("password");
+      const visibilityBtn = document.getElementById("visibilityBtn");
+      if (passwordField.type === "password") {
+        passwordField.type = "text";
+        visibilityBtn.textContent = "🙈";
+      } else {
+        passwordField.type = "password";
+        visibilityBtn.textContent = "👁️";
+      }
+    });
+
+    // Show Alert
+    function showAlert(message) {
+      const alertMessage = document.getElementById("alertMessage");
+      const alertText = document.getElementById("alertText");
+      alertText.textContent = message;
+      alertMessage.classList.remove("hidden");
+      setTimeout(() => alertMessage.classList.add("hidden"), 3000);
+    }
+
+    // Event Listeners
+    document.getElementById("generate").addEventListener("click", generatePassword);
+
+    // Initial Call
+    generatePassword();
+  </script>
+
+</body>
+
+</html>
